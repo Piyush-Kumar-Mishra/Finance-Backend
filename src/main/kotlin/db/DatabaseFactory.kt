@@ -8,11 +8,14 @@ object DatabaseFactory{
     private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
     private val dotenv = dotenv()
 
+    private fun requireEnv(key: String): String =
+        dotenv[key] ?: throw IllegalStateException("$key is missing from .env")
+
     fun init() {
-        val dbUrl = dotenv["DB_URL"]
-        val dbUser = dotenv["DB_USER"]
-        val dbPassword = dotenv["DB_PASSWORD"]
-        val dbDriver= dotenv["DB_DRIVER"]
+        val dbUrl = requireEnv("DB_URL")
+        val dbUser = requireEnv("DB_USER")
+        val dbPassword = requireEnv("DB_PASSWORD")
+        val dbDriver = requireEnv("DB_DRIVER")
 
         try {
             Database.connect(
