@@ -1,5 +1,6 @@
 package com.example.routes
 
+import com.example.dto.RecordFilters
 import com.example.repository.UserRepository
 import com.example.service.UserRecordService
 import io.ktor.http.HttpStatusCode
@@ -21,7 +22,14 @@ fun Route.recordRoutes(
         route("/records") {
             get {
                 val user = call.requireCurrentUser(userRepository)
-                call.respond(userRecordService.getAllRecords(user))
+                val filters = RecordFilters(
+                    type = call.request.queryParameters["type"],
+                    category = call.request.queryParameters["category"],
+                    date = call.request.queryParameters["date"],
+                    fromDate = call.request.queryParameters["fromDate"],
+                    toDate = call.request.queryParameters["toDate"]
+                )
+                call.respond(userRecordService.getAllRecords(user, filters))
             }
 
             get("/{id}") {

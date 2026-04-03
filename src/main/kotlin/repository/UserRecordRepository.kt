@@ -6,7 +6,13 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface UserRecordRepository {
-    fun findAll(): List<UserRecord>
+    fun findAll(
+        type: RecordType? = null,
+        category: String? = null,
+        date: LocalDate? = null,
+        fromDate: LocalDate? = null,
+        toDate: LocalDate? = null
+    ): List<UserRecord>
     fun findById(id: Long): UserRecord?
     fun create(
         userId: Long,

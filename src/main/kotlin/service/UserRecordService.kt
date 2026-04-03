@@ -2,6 +2,7 @@ package com.example.service
 
 import com.example.db.schemas.RecordType
 import com.example.dto.CreateRecordRequest
+import com.example.dto.RecordFilters
 import com.example.dto.RecordListResponse
 import com.example.dto.RecordResponse
 import com.example.dto.UpdateRecordRequest
@@ -19,9 +20,16 @@ class UserRecordService(
     private val recordAccessControl: RecordAccessControl
 ) {
 
-    fun getAllRecords(user: User): RecordListResponse {
+    fun getAllRecords(user: User, filters: RecordFilters = RecordFilters()): RecordListResponse {
         recordAccessControl.allowView(user)
-        val records = userRecordRepository.findAll().map { it.toResponse() }
+        val parsedFilters = parseFilters(filters)
+        val records = userRecordRepository.findAll(
+            type = parsedFilters.type,
+            category = parsedFilters.category,
+            date = parsedFilters.date,
+            fromDate = parsedFilters.fromDate,
+            toDate = parsedFilters.toDate
+        ).map { it.toResponse() }
         return RecordListResponse(records)
     }
 
@@ -130,6 +138,30 @@ class UserRecordService(
         return value?.trim()?.takeIf { it.isNotBlank() }
     }
 
+    private fun parseFilters(filters: RecordFilters): ParsedRecordFilters {
+        val type = filters.type?.let { parseType(it) }
+        val category = normalizeText(filters.category)
+        val date = filters.date?.let { parseDate(it) }
+        val fromDate = filters.fromDate?.let { parseDate(it) }
+        val toDate = filters.toDate?.let { parseDate(it) }
+
+        if (date != null && (fromDate != null || toDate != null)) {
+            throw HttpException(HttpStatusCode.BadRequest, "Use either date or date range filters")
+        }
+
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw HttpException(HttpStatusCode.BadRequest, "From date cannot be after to date")
+        }
+
+        return ParsedRecordFilters(
+            type = type,
+            category = category,
+            date = date,
+            fromDate = fromDate,
+            toDate = toDate
+        )
+    }
+
     private fun validateLengths(category: String?, description: String?) {
         if (category != null && category.length > 50) {
             throw HttpException(HttpStatusCode.BadRequest, "Category length exceeded")
@@ -150,4 +182,12 @@ class UserRecordService(
             description = description
         )
     }
+
+    private data class ParsedRecordFilters(
+        val type: RecordType?,
+        val category: String?,
+        val date: LocalDate?,
+        val fromDate: LocalDate?,
+        val toDate: LocalDate?
+    )
 }

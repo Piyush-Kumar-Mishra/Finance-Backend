@@ -34,3 +34,11 @@ data class RecordResponse(
 data class RecordListResponse(
     val records: List<RecordResponse>
 )
+
+data class RecordFilters(
+    val type: String? = null,
+    val category: String? = null,
+    val date: String? = null,
+    val fromDate: String? = null,
+    val toDate: String? = null
+)
