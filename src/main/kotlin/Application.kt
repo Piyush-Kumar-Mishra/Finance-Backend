@@ -4,11 +4,16 @@ import com.example.db.DatabaseFactory
 import com.example.dto.ErrorResponse
 import com.example.repository.UserRepository
 import com.example.repository.UserRepositoryImpl
+import com.example.repository.UserRecordRepositoryImpl
 import com.example.repository.UserSessionRepository
 import com.example.repository.UserSessionRepositoryImpl
 import com.example.security.BCryptPasswordHasher
 import com.example.security.JwtConfig
+import com.example.security.RecordAccessControl
+import com.example.security.UserManagementAccessControl
+import com.example.service.UserRecordService
 import com.example.service.AuthService
+import com.example.service.UserManagementService
 import com.example.utils.HttpException
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -16,6 +21,7 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.auth.jwt.JWTPrincipal
 import com.example.routes.authRoutes
+import com.example.routes.recordRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -31,18 +37,29 @@ fun Application.module() {
     DatabaseFactory.init()
     val userRepository: UserRepository = UserRepositoryImpl()
     val userSessionRepository: UserSessionRepository = UserSessionRepositoryImpl()
+    val userRecordRepository = UserRecordRepositoryImpl()
     val passwordHasher = BCryptPasswordHasher()
     val authService = AuthService(
         userRepository = userRepository,
         userSessionRepository = userSessionRepository,
         passwordHasher = passwordHasher
     )
+    val userManagementService = UserManagementService(
+        userRepository = userRepository,
+        userManagementAccessControl = UserManagementAccessControl()
+    )
+    val recordAccessControl = RecordAccessControl()
+    val userRecordService = UserRecordService(
+        userRecordRepository = userRecordRepository,
+        recordAccessControl = recordAccessControl
+    )
     configureSerialization()
     configureStatusPages()
     configureSecurity(userSessionRepository)
     configureRouting()
     routing{
-        authRoutes(authService)
+        authRoutes(authService, userManagementService, userRepository)
+        recordRoutes(userRepository, userRecordService)
     }
 }
 

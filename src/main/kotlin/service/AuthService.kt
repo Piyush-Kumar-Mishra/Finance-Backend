@@ -1,5 +1,6 @@
 package com.example.service
 
+import com.example.db.schemas.UserRole
 import com.example.db.schemas.UserStatus
 import com.example.dto.AuthResponse
 import com.example.dto.LoginRequest
@@ -32,6 +33,18 @@ class AuthService(
     }
 
     fun signup(request: SignupRequest): AuthResponse{
+        return createUser(request, UserRole.VIEWER)
+    }
+
+    fun createAdmin(request: SignupRequest): AuthResponse {
+        if (userRepository.adminExists(UserRole.ADMIN) > 0) {
+            throw HttpException(HttpStatusCode.Forbidden, "Admin account already exists")
+        }
+
+        return createUser(request, UserRole.ADMIN)
+    }
+
+    private fun createUser(request: SignupRequest, role: UserRole): AuthResponse {
         val email = request.email.trim()
         val password = request.password.trim()
         validateEmail(email)
@@ -43,7 +56,7 @@ class AuthService(
         }
 
         val user = try{
-            userRepository.create(email, passwordHash)
+            userRepository.create(email, passwordHash, role)
         }
         catch (e: ExposedSQLException) {
                 if (userRepository.findByEmail(email) != null) {
