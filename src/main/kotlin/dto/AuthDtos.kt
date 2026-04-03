@@ -32,6 +32,24 @@ data class AuthResponse(
 )
 
 @Serializable
+data class UpdateUserRoleRequest(
+    val role: String
+)
+
+@Serializable
+data class UpdateUserStatusRequest(
+    val status: String
+)
+
+@Serializable
+data class UserRoleResponse(
+    val id: Long,
+    val email: String,
+    val role: String,
+    val status: String
+)
+
+@Serializable
 data class ErrorResponse(
     val message: String
 )
