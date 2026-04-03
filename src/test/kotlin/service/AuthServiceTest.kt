@@ -221,6 +221,44 @@ class AuthServiceTest {
         assertEquals("Session expired, please login again", message)
         assertEquals(0, userSessionRepository.sessionCount())
     }
+
+    @Test
+    fun `create admin works when no admin exists`() {
+        val userRepository = InMemoryUserRepository()
+        val userSessionRepository = InMemoryUserSessionRepository()
+        val authService = AuthService(userRepository, userSessionRepository, passwordHasher)
+
+        val response = authService.createAdmin(SignupRequest("admin@example.com", "pass123"))
+        val user = userRepository.findByEmail("admin@example.com")
+
+        assertNotNull(user)
+        assertEquals(UserRole.ADMIN, user.role)
+        assertTrue(response.accessToken.isNotBlank())
+    }
+
+    @Test
+    fun `create admin fails when admin already exists`() {
+        val userRepository = InMemoryUserRepository()
+        val userSessionRepository = InMemoryUserSessionRepository()
+        val authService = AuthService(userRepository, userSessionRepository, passwordHasher)
+
+        userRepository.saveUser(
+            User(
+                id = 1,
+                email = "admin@example.com",
+                passwordHash = passwordHasher.hash("pass123"),
+                status = UserStatus.ACTIVE,
+                role = UserRole.ADMIN
+            )
+        )
+
+        try {
+            authService.createAdmin(SignupRequest("newadmin@example.com", "pass123"))
+            fail("Expected admin creation to fail")
+        } catch (e: HttpException) {
+            assertEquals("Admin account already exists", e.message)
+        }
+    }
 }
 
 private class FakePasswordHasher : PasswordHasher {
@@ -244,16 +282,38 @@ private class InMemoryUserRepository : UserRepository {
     }
 
     override fun create(email: String, passwordHash: String): User {
+        return create(email, passwordHash, UserRole.VIEWER)
+    }
+
+    override fun create(email: String, passwordHash: String, role: UserRole): User {
         val user = User(
             id = nextId,
             email = email,
             passwordHash = passwordHash,
             status = UserStatus.ACTIVE,
-            role = UserRole.VIEWER
+            role = role
         )
         users[user.id] = user
         nextId += 1
         return user
+    }
+
+    override fun updateRole(id: Long, role: UserRole): User? {
+        val user = users[id] ?: return null
+        val updatedUser = user.copy(role = role)
+        users[id] = updatedUser
+        return updatedUser
+    }
+
+    override fun updateStatus(id: Long, status: UserStatus): User? {
+        val user = users[id] ?: return null
+        val updatedUser = user.copy(status = status)
+        users[id] = updatedUser
+        return updatedUser
+    }
+
+    override fun adminExists(role: UserRole): Long {
+        return users.values.count { it.role == role }.toLong()
     }
 
     fun saveUser(user: User) {

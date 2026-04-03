@@ -4,7 +4,10 @@ import com.example.db.schemas.RecordType
 import com.example.db.schemas.UserRecords
 import com.example.model.UserRecord
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -15,8 +18,31 @@ import java.time.LocalDate
 
 class UserRecordRepositoryImpl : UserRecordRepository {
 
-    override fun findAll(): List<UserRecord> = transaction {
+    override fun findAll(
+        type: RecordType?,
+        category: String?,
+        date: LocalDate?,
+        fromDate: LocalDate?,
+        toDate: LocalDate?
+    ): List<UserRecord> = transaction {
         UserRecords.selectAll()
+            .apply {
+                if (type != null) {
+                    andWhere { UserRecords.type eq type }
+                }
+                if (category != null) {
+                    andWhere { UserRecords.category eq category }
+                }
+                if (date != null) {
+                    andWhere { UserRecords.date eq date }
+                }
+                if (fromDate != null) {
+                    andWhere { UserRecords.date greaterEq fromDate }
+                }
+                if (toDate != null) {
+                    andWhere { UserRecords.date lessEq toDate }
+                }
+            }
             .orderBy(UserRecords.date to SortOrder.DESC, UserRecords.id to SortOrder.DESC)
             .map {
                 UserRecord(
