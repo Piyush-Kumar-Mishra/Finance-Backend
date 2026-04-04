@@ -8,6 +8,7 @@ import com.example.repository.UserRecordRepositoryImpl
 import com.example.repository.UserSessionRepository
 import com.example.repository.UserSessionRepositoryImpl
 import com.example.routes.dashboardRoutes
+import com.example.security.AuthRateLimiter
 import com.example.security.BCryptPasswordHasher
 import com.example.security.JwtConfig
 import com.example.security.RecordAccessControl
@@ -41,6 +42,7 @@ fun Application.module() {
     val userSessionRepository: UserSessionRepository = UserSessionRepositoryImpl()
     val userRecordRepository = UserRecordRepositoryImpl()
     val passwordHasher = BCryptPasswordHasher()
+    val authRateLimiter = AuthRateLimiter()
     val authService = AuthService(
         userRepository = userRepository,
         userSessionRepository = userSessionRepository,
@@ -64,7 +66,7 @@ fun Application.module() {
     configureSecurity(userSessionRepository)
     configureRouting()
     routing{
-        authRoutes(authService, userManagementService, userRepository)
+        authRoutes(authService, userManagementService, userRepository, authRateLimiter)
         recordRoutes(userRepository, userRecordService)
         dashboardRoutes(userRepository, dashboardService)
     }

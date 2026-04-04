@@ -7,10 +7,13 @@ import com.example.dto.SignupRequest
 import com.example.dto.UpdateUserRoleRequest
 import com.example.dto.UpdateUserStatusRequest
 import com.example.repository.UserRepository
+import com.example.security.AuthRateLimiter
 import com.example.service.AuthService
 import com.example.service.UserManagementService
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -21,10 +24,12 @@ import io.ktor.server.routing.route
 fun Route.authRoutes(
     authService: AuthService,
     userManagementService: UserManagementService,
-    userRepository: UserRepository
+    userRepository: UserRepository,
+    authRateLimiter: AuthRateLimiter
 ){
     route("/account"){
         post("/signup") {
+            authRateLimiter.checkSignup(call.clientId())
             val request = call.receive<SignupRequest>()
             val response = authService.signup(request)
             call.respond(HttpStatusCode.Created, response)
@@ -35,10 +40,12 @@ fun Route.authRoutes(
             call.respond(HttpStatusCode.Created, response)
         }
         post("/login"){
+            authRateLimiter.checkLogin(call.clientId())
             val request = call.receive<LoginRequest>()
             call.respond(authService.login(request))
         }
         post("/refresh") {
+            authRateLimiter.checkRefresh(call.clientId())
             val request = call.receive<RefreshTokenRequest>()
             call.respond(authService.refresh(request))
         }
@@ -66,4 +73,13 @@ fun Route.authRoutes(
             }
         }
     }
+}
+
+private fun ApplicationCall.clientId(): String {
+    val forwardedFor = request.headers["X-Forwarded-For"]
+        ?.substringBefore(",")
+        ?.trim()
+
+    return forwardedFor?.takeIf { it.isNotBlank() }
+        ?: request.origin.remoteHost
 }
