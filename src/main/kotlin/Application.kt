@@ -7,12 +7,14 @@ import com.example.repository.UserRepositoryImpl
 import com.example.repository.UserRecordRepositoryImpl
 import com.example.repository.UserSessionRepository
 import com.example.repository.UserSessionRepositoryImpl
+import com.example.routes.dashboardRoutes
 import com.example.security.BCryptPasswordHasher
 import com.example.security.JwtConfig
 import com.example.security.RecordAccessControl
 import com.example.security.UserManagementAccessControl
 import com.example.service.UserRecordService
 import com.example.service.AuthService
+import com.example.service.DashboardService
 import com.example.service.UserManagementService
 import com.example.utils.HttpException
 import io.ktor.http.HttpStatusCode
@@ -53,6 +55,10 @@ fun Application.module() {
         userRecordRepository = userRecordRepository,
         recordAccessControl = recordAccessControl
     )
+    val dashboardService = DashboardService(
+        userRecordRepository = userRecordRepository,
+        recordAccessControl = recordAccessControl
+    )
     configureSerialization()
     configureStatusPages()
     configureSecurity(userSessionRepository)
@@ -60,6 +66,7 @@ fun Application.module() {
     routing{
         authRoutes(authService, userManagementService, userRepository)
         recordRoutes(userRepository, userRecordService)
+        dashboardRoutes(userRepository, dashboardService)
     }
 }
 
