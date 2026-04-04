@@ -2,8 +2,6 @@
 
 A clean Kotlin backend service built with Ktor for finance record management, role-based access control, dashboard summaries, and JWT-based authentication.
 
-This project was built as a backend assignment and focuses on correctness, clarity, maintainability, and simple logical design. It provides REST APIs for authentication, user role management, financial record management, and dashboard-level analytics such as total income, total expense, net balance, category totals, recent activity, and monthly or weekly trends.
-
 ## What This Backend Showcases
 
 - Layered backend structure with routes, services, repositories, models, and security separated clearly
