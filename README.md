@@ -1,7 +1,7 @@
 # Finance Dashboard Backend
 
 A clean Kotlin backend service built with Ktor for finance record management, role-based access control, dashboard summaries, and JWT-based authentication.
-
+# API documentation: https://documenter.getpostman.com/view/50647382/2sBXiqDTjE
 ## What This Backend Showcases
 
 - Layered backend structure with routes, services, repositories, models, and security separated clearly
